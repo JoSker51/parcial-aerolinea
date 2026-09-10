@@ -1,0 +1,358 @@
+{
+  "scenario": {
+    "flight_instance_id": 113,
+    "flight_number": "AV8101",
+    "origin": "BOG",
+    "destination": "MDE",
+    "flight_date": "2026-09-10",
+    "capacity": 12,
+    "seats_left": 1,
+    "cabin": "BUS"
+  },
+  "summary": {
+    "workers": 40,
+    "created": 1,
+    "rejected": 39,
+    "errors": 0,
+    "latency": {
+      "p50": 334.67,
+      "p95": 428.99,
+      "max": 444.47
+    }
+  },
+  "invariant": {
+    "oversell_violations": 0,
+    "capacity": 12,
+    "seats_sold": 11,
+    "seats_held": 1,
+    "seats_available": 0,
+    "reconciliation": {
+      "counter_sold": 11,
+      "counter_held": 1,
+      "actual_confirmed": 0,
+      "actual_held": "1"
+    }
+  },
+  "results": [
+    {
+      "worker": 0,
+      "status_code": 409,
+      "elapsed_ms": 282.36,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 1,
+      "status_code": 409,
+      "elapsed_ms": 283.86,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 2,
+      "status_code": 409,
+      "elapsed_ms": 412.31,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 3,
+      "status_code": 409,
+      "elapsed_ms": 379.75,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 4,
+      "status_code": 409,
+      "elapsed_ms": 306.43,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 5,
+      "status_code": 409,
+      "elapsed_ms": 264.42,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 6,
+      "status_code": 409,
+      "elapsed_ms": 375.37,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 7,
+      "status_code": 409,
+      "elapsed_ms": 444.47,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 8,
+      "status_code": 409,
+      "elapsed_ms": 265.3,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 9,
+      "status_code": 409,
+      "elapsed_ms": 338.84,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 10,
+      "status_code": 409,
+      "elapsed_ms": 397.22,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 11,
+      "status_code": 409,
+      "elapsed_ms": 303.07,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 12,
+      "status_code": 409,
+      "elapsed_ms": 312.21,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 13,
+      "status_code": 409,
+      "elapsed_ms": 285.53,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 14,
+      "status_code": 409,
+      "elapsed_ms": 417.03,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 15,
+      "status_code": 409,
+      "elapsed_ms": 268.0,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 16,
+      "status_code": 409,
+      "elapsed_ms": 410.4,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 17,
+      "status_code": 409,
+      "elapsed_ms": 361.01,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 18,
+      "status_code": 201,
+      "elapsed_ms": 330.51,
+      "pnr": "LCE3CG",
+      "code": null,
+      "message": null
+    },
+    {
+      "worker": 19,
+      "status_code": 409,
+      "elapsed_ms": 312.0,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 20,
+      "status_code": 409,
+      "elapsed_ms": 362.31,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 21,
+      "status_code": 409,
+      "elapsed_ms": 419.17,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 22,
+      "status_code": 409,
+      "elapsed_ms": 314.49,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 23,
+      "status_code": 409,
+      "elapsed_ms": 271.41,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 24,
+      "status_code": 409,
+      "elapsed_ms": 390.78,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 25,
+      "status_code": 409,
+      "elapsed_ms": 428.99,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 26,
+      "status_code": 409,
+      "elapsed_ms": 265.02,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 27,
+      "status_code": 409,
+      "elapsed_ms": 410.77,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 28,
+      "status_code": 409,
+      "elapsed_ms": 324.06,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 29,
+      "status_code": 409,
+      "elapsed_ms": 327.11,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 30,
+      "status_code": 409,
+      "elapsed_ms": 311.02,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 31,
+      "status_code": 409,
+      "elapsed_ms": 395.15,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 32,
+      "status_code": 409,
+      "elapsed_ms": 302.72,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 33,
+      "status_code": 409,
+      "elapsed_ms": 369.19,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 34,
+      "status_code": 409,
+      "elapsed_ms": 278.01,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 35,
+      "status_code": 409,
+      "elapsed_ms": 407.12,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 36,
+      "status_code": 409,
+      "elapsed_ms": 285.34,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 37,
+      "status_code": 409,
+      "elapsed_ms": 412.91,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 38,
+      "status_code": 409,
+      "elapsed_ms": 388.47,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    },
+    {
+      "worker": 39,
+      "status_code": 409,
+      "elapsed_ms": 395.96,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    }
+  ]
+}

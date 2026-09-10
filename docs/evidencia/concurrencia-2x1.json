@@ -1,0 +1,54 @@
+{
+  "scenario": {
+    "flight_instance_id": 113,
+    "flight_number": "AV8101",
+    "origin": "BOG",
+    "destination": "MDE",
+    "flight_date": "2026-09-10",
+    "capacity": 12,
+    "seats_left": 1,
+    "cabin": "BUS"
+  },
+  "summary": {
+    "workers": 2,
+    "created": 1,
+    "rejected": 1,
+    "errors": 0,
+    "latency": {
+      "p50": 65.23,
+      "p95": 70.95,
+      "max": 70.95
+    }
+  },
+  "invariant": {
+    "oversell_violations": 0,
+    "capacity": 12,
+    "seats_sold": 11,
+    "seats_held": 1,
+    "seats_available": 0,
+    "reconciliation": {
+      "counter_sold": 11,
+      "counter_held": 1,
+      "actual_confirmed": 0,
+      "actual_held": "1"
+    }
+  },
+  "results": [
+    {
+      "worker": 0,
+      "status_code": 201,
+      "elapsed_ms": 70.95,
+      "pnr": "KR9KBV",
+      "code": null,
+      "message": null
+    },
+    {
+      "worker": 1,
+      "status_code": 409,
+      "elapsed_ms": 59.52,
+      "pnr": null,
+      "code": "SEAT_UNAVAILABLE",
+      "message": "Sin disponibilidad en uno de los tramos solicitados."
+    }
+  ]
+}

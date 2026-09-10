@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Entorno y credenciales — nunca deben entrar al repositorio
+.env
+*.env
+.aws/
+credentials
+*.pem
+*.key
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
+
+# Temporales de conversión de documentos
+~$*.docx
+*.bak
