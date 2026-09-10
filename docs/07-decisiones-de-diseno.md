@@ -273,6 +273,93 @@ Es una **denormalización deliberada de naturaleza temporal**, no un descuido: e
 
 ---
 
+### 5.7 Cabinas y clases tarifarias: qué hay y por qué están ordenadas así
+
+Hay que separar tres conceptos que se confunden con facilidad, porque son **tres entidades distintas** en el modelo:
+
+| Concepto | Entidad | Qué es | Cuántos hay |
+|---|---|---|---|
+| **Cabina** | `cabin` | El espacio **físico** del avión. Es lo que controla el inventario (DEC-3) | 2 |
+| **Clase tarifaria** | `fare_class` | El **producto comercial** que se vende dentro de una cabina | 4 |
+| **Regla tarifaria** | `fare_rule` | Las **condiciones** que acompañan a ese producto | 4 |
+
+#### Las dos cabinas
+
+| Código | Nombre | `boarding_priority` |
+|---|---|---|
+| `BUS` | Ejecutiva | 1 |
+| `ECO` | Económica | 2 |
+
+Son entidad y no un tipo `ENUM` por una razón práctica: agregar una cabina `PREMIUM_ECO` debe ser un `INSERT`, no una migración de tipo de dato que obligue a reescribir la tabla.
+
+#### Las cuatro clases tarifarias, y el porqué de su orden
+
+`fare_class` tiene una columna **`rank`** que las ordena explícitamente:
+
+| `rank` | Código | Nombre | Cabina | Regla asociada | Anticipación mínima |
+|---|---|---|---|---|---|
+| **1** | `P` | Económica promo | `ECO` | Promo anticipada 21d | **21 días** |
+| **2** | `Y` | Económica estándar | `ECO` | Estándar 7d | **7 días** |
+| **3** | `B` | Económica flexible | `ECO` | Flexible | **0 días** |
+| **4** | `J` | Ejecutiva | `BUS` | Ejecutiva flexible | **0 días** |
+
+**El orden no es alfabético ni por precio: es por grado de restricción, de la más restrictiva a la más flexible.** Y esa es la respuesta a por qué existen tres clases distintas dentro de una misma cabina:
+
+> **`P`, `Y` y `B` son físicamente el mismo asiento.** Un pasajero en promo y uno en flexible viajan en sillas idénticas, en la misma cabina económica. **Lo que se cobra distinto no es el asiento: es la flexibilidad.**
+
+Lo que realmente cambia entre ellas está en `fare_rule`:
+
+| Regla | Anticipación | ¿Reembolsable? | ¿Cambiable? | Maletas en bodega | ¿Silla gratis? |
+|---|---|---|---|---|---|
+| Promo anticipada 21d | 21 días | No | No | 0 | No |
+| Estándar 7d | 7 días | No | Sí, con penalidad de 120.000 | 1 | No |
+| Flexible | 0 días | Sí, con penalidad de 180.000 | Sí, sin penalidad | 1 | Sí |
+| Ejecutiva flexible | 0 días | Sí, sin penalidad | Sí, sin penalidad | 2 | Sí |
+
+**La lógica comercial que explica el orden**, y que es lo que hay que poder sustentar: la aerolínea quiere vender barato y temprano (llena el avión con anticipación y cobra por adelantado), y caro y tarde (al viajero de negocios que decide a última hora y paga por poder cambiar de planes). El `rank` codifica esa escalera. Por eso `min_advance_days` **decrece** al subir de rango: la promo exige comprar con 21 días de anticipación precisamente porque su función es capturar demanda temprana; la flexible no exige nada porque su función es capturar al que compra hoy para volar mañana.
+
+**Y esto se puede comprobar en los datos, no solo afirmar.** En la corrida real del ETL, la anticipación media de compra por clase salió en el orden esperado:
+
+| Clase | Anticipación mínima exigida | Anticipación media **real** de compra |
+|---|---|---|
+| `P` promo | 21 días | **38,1 días** |
+| `Y` estándar | 7 días | **16,3 días** |
+| `B` flexible | 0 días | **3,4 días** |
+
+La regla no solo está en el esquema: **se comporta como debe en los datos**. Es una de las verificaciones más contundentes del trabajo, porque demuestra que el modelo de tarifas no es decorativo.
+
+> **Cómo se elige la clase al reservar:** el sistema no la pide, la **deriva**. `search.py` y `booking.py` consultan la tarifa más barata *elegible* para la fecha del vuelo, y la elegibilidad la impone `fare_rule.min_advance_days <= (fecha_del_vuelo - hoy)`. Si faltan 30 días, `P` es elegible y gana por precio; si faltan 3, `P` queda descartada automáticamente y el pasajero paga `B`. Esa es la implementación literal de *"tarifas diferentes según la anticipación con que se compra el tiquete"* que pide el enunciado.
+
+---
+
+### 5.8 Por qué las tablas están en ese orden en el esquema
+
+El archivo `backend/sql/01_schema.sql` está dividido en **nueve bloques numerados**, y el orden **no es estético: es obligatorio y además significativo**.
+
+| # | Bloque | Tablas |
+|---|---|---|
+| 1 | Catálogo de red y flota | `cabin`, `airport`, `route`, `aircraft_model`, `seat_map`, `seat_map_seat`, `aircraft` |
+| 2 | Programación y operación | `scheduled_flight`, `flight_instance`, `flight_inventory` |
+| 3 | Tarifas | `fare_rule`, `fare_class`, `fare` |
+| 4 | Personas y agencias | `passenger`, `agency` |
+| 5 | Reserva | `reservation`, `reservation_passenger`, `itinerary`, `itinerary_segment` |
+| 6 | Emisión | `ticket`, `seat_assignment`, `ancillary` |
+| 7 | Pagos | `payment`, `payment_event`, `refund` |
+| 8 | Auditoría | `reservation_event` |
+| 9 | Vistas de apoyo | `v_flight_availability`, `v_seat_map_capacity`, `v_oversell_check`, `v_inventory_reconciliation` |
+
+**Razón obligatoria — las claves foráneas.** PostgreSQL rechaza una referencia a una tabla que todavía no existe. Como `route` apunta a `airport`, `airport` tiene que crearse antes. Como `flight_instance` apunta a `scheduled_flight` y a `aircraft`, ambas deben existir primero. El orden es, literalmente, un **ordenamiento topológico del grafo de dependencias**: no hay libertad para reordenarlo sin romper la creación del esquema.
+
+**Razón significativa — y esto es lo interesante:** ese mismo orden coincide con **dos cosas más**, y no por casualidad.
+
+1. **Va de lo más estable a lo más volátil.** Los aeropuertos y las rutas cambian un par de veces al año; los vuelos programados, cada temporada; las instancias de vuelo, a diario; las reservas y los eventos de auditoría, miles de veces al día. **Lo que depende de algo cambia más rápido que aquello de lo que depende** — una entidad estable puede sostener a muchas volátiles, pero no al revés. Si el catálogo de aeropuertos cambiara con la misma frecuencia que las reservas, el modelo entero sería insostenible.
+
+2. **Se lee como el flujo del negocio.** Primero existe una red de aeropuertos y una flota; sobre eso se programan vuelos; a esos vuelos se les pone precio; entonces aparecen las personas; las personas reservan; la reserva emite tiquetes; los tiquetes se pagan; y todo lo anterior queda auditado. **El esquema se puede leer de arriba abajo como la historia de cómo opera una aerolínea**, y esa es la mejor forma de presentarlo en la sustentación: no como una lista de 26 tablas, sino como seis capas que se apoyan una sobre otra.
+
+Las **vistas van al final** por la misma razón que las tablas van en ese orden: una vista solo puede consultar objetos que ya existen. Y son cuatro con propósitos distintos: `v_flight_availability` sostiene la búsqueda (RNF-P1), `v_seat_map_capacity` deriva la capacidad por cabina desde el mapa de sillas, `v_oversell_check` es la **aserción del invariante** de no-sobreventa (debe devolver siempre cero filas) y `v_inventory_reconciliation` comprueba que el contador materializado coincide con los tramos realmente vendidos — es decir, vigila la denormalización declarada en §5.5.
+
+---
+
 ## 6. Resumen: qué se priorizó sobre qué
 
 Toda arquitectura es un conjunto de renuncias. Estas son las que se tomaron, declaradas:
