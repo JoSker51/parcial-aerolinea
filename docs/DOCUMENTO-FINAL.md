@@ -7,7 +7,6 @@ lang: es
 **Big Data e Ingeniería de Datos · Parcial 1 · 2026-2**
 
 **Integrantes:** José Santiago González · Luis Díaz
-**Fecha de entrega:** _(completar)_
 **Repositorio:** <https://github.com/JoSker51/parcial-aerolinea>
 
 ---
@@ -930,7 +929,7 @@ Un costo sin supuestos no es una proyección, es un número.
 | # | Supuesto | Valor |
 |---|---|---|
 | C-1 | Región | `us-east-1` |
-| C-2 | Precios | Bajo demanda, públicos. **Verificar en la calculadora de AWS antes de presentar**: los precios cambian |
+| C-2 | Precios | Bajo demanda, públicos, **consultados el 2026-09-02** en la calculadora de AWS |
 | C-3 | Horas/mes | 730 |
 | C-4 | Volumen base | SUP-1 a SUP-4: 35 rutas, ~3.600 instancias/mes, ~15.000 tiquetes/mes |
 | C-5 | Almacenamiento | 20 GB gp3 por instancia (el OLTP crece ~1,5 GB/mes) |
@@ -1307,16 +1306,7 @@ Vale la pena decirlo porque es la validación real del diseño: **el mecanismo d
 | **A-2** | Rol IAM compartido **`LabRole`** en vez de privilegio mínimo por componente | El Learner Lab no permite crear roles ni políticas | Debilita RNF-S4 en el entorno de práctica. En producción: un rol por componente |
 | **A-3** | El ETL lee del **primario**, no de una réplica como establece DEC-11 | No hay presupuesto para una tercera instancia en el lab | Viola RNF-P4 **solo en el lab**. Se mitiga corriendo en la ventana de menor tráfico. En producción la réplica es obligatoria |
 | **A-4** | Contraseñas por parámetro del job en vez de **Secrets Manager** | El Learner Lab restringe Secrets Manager de forma intermitente | Debilita RNF-S3. En producción: Secrets Manager (0,40 USD/secreto/mes) con rotación |
+| **A-5** | Acceso público **temporal** a ambas instancias RDS durante la carga inicial del esquema, con el 5432 restringido a una sola IP, y **revertido al terminar** | El Learner Lab no ofrece bastión ni pasarela de salida, y los esquemas había que cargarlos desde la máquina del equipo | Ventana acotada y cerrada al terminar: **el estado final cumple RNF-S3**. En producción la carga se haría desde un bastión o desde la propia VPC |
+| **A-6** | El driver de PostgreSQL se entrega como **paquetes precargados en S3** (`--extra-py-files`) en vez de instalarse desde el repositorio público | El job corre dentro de la VPC por llevar conexiones JDBC adjuntas y, sin pasarela de salida (decisión C-10), **no tiene ruta a internet** | Ninguno funcional; el job queda además **más rápido y determinista**, sin depender de un repositorio externo en cada corrida |
 
 ---
-
-## Anexo D — Estado de los pendientes
-
-- [x] ~~Integrar la **restricción confidencial de la sección 3**~~ — **No aplica:** al equipo no se le asignó ninguna. El punto de extensión `PE-0` (§2.3) se conserva con cuatro restricciones hipotéticas analizadas, incluida una que el diseño no absorbe.
-- [x] ~~Completar los integrantes en la portada~~ — José Santiago González y Luis Díaz.
-- [x] ~~Ampliar la bitácora de prompts~~ — **17 entradas de dos sesiones** con dos integrantes (Anexo A).
-- [x] ~~Publicar el código en GitHub~~ — <https://github.com/JoSker51/parcial-aerolinea> (público).
-- [x] ~~Ejecutar `etl/infra/setup_aws.sh` en el Learner Lab~~ — Ambas bases registradas en el Glue Data Catalog y ETL en `SUCCEEDED`. Evidencia en §13.7 y `docs/evidencia/`.
-- [x] ~~Adjuntar la captura de la consola de Glue~~ — Figuras 5 a 8.
-- [ ] **Fecha de entrega** en la portada.
-- [ ] **Verificar los precios de AWS** en la calculadora antes de presentar: las cifras de §13.4 se consultaron el 2026-09-02 y los precios cambian.
