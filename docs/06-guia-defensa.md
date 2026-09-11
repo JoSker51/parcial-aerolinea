@@ -15,7 +15,7 @@ Dos huecos reales, en orden de gravedad:
 | # | Hueco | Sección afectada | Gravedad |
 |---|---|---|---|
 | **1** | ~~La sección 5.7 (AWS) está diseñada y codificada, pero no hay evidencia de haberse desplegado.~~ **RESUELTO.** El despliegue se ejecutó de verdad: ambas instancias RDS creadas, los tres esquemas cargados, **ambas bases registradas en el Glue Data Catalog** (30 y 13 objetos) y el job de ETL corrido con éxito (`SUCCEEDED`, 112 s) poblando los tres hechos del modelo estrella. Evidencia en [`evidencia/aws-despliegue.md`](evidencia/aws-despliegue.md); los seis obstáculos encontrados quedaron documentados en §5.7.7 del documento de AWS. | 5.7 | ✅ Cerrado |
-| **2** | **La restricción confidencial de la sección 3 del enunciado nunca se integró.** `PE-0` en los tres documentos de diseño dice textualmente que "el equipo aún no ha recibido la restricción". El usuario confirmó en esta sesión que **no existe ninguna restricción asignada**. El enunciado (§3 y §7) y la rúbrica (criterio de RF) tratan esto como obligatorio: *"la restricción debe integrarse coherentemente en todos los entregables"* y la sustentación es *"eliminatoria"* si no se puede sustentar. Ver §4 de esta guía para la recomendación concreta. | 3, 5.1 | 🟡 Alta, pero resoluble sin rediseño |
+| **2** | ~~La restricción confidencial de la sección 3 nunca se integró.~~ **CERRADO.** El equipo confirmó que **no se le asignó ninguna restricción**. El texto de `PE-0` se cambió de *"aún no ha recibido"* —que sonaba a pendiente— a la afirmación cerrada de que no aplica, conservando la tabla de restricciones hipotéticas: **lo que el ejercicio evalúa de verdad no es qué restricción te tocó, sino si el diseño aguanta una que no conocías al empezar.** Ver §4. | 3, 5.1 | ✅ Cerrado |
 
 Todo lo demás — modelo de datos, arquitectura, implementación del backend, evidencia de concurrencia, trazabilidad — está en condición de sustentarse tal como está. El §5 de esta guía (checklist de rúbrica) detalla criterio por criterio.
 
@@ -122,32 +122,28 @@ Todo lo demás — modelo de datos, arquitectura, implementación del backend, e
 | **SUP-13** | Agencias: tarifa neta + comisión, cupo de crédito, credenciales propias | ✅ Vigente y **mayormente implementado** | `agency`, `credit_used`/`credit_limit`, descuento y comisión están todos en `booking.py`. Lo que falta es la superficie de API separada (DEC-7) y las credenciales OAuth2 propias (RF-20 `◐`) |
 | **SUP-14** | Pago delegado a PSP externo, *hosted checkout* + webhook, sin PAN | ✅ Vigente e implementado **con un PSP simulado** | `payment.psp_provider = 'MOCK_PSP'` en el código — correcto para el alcance de 5.6, pero hay que ser explícito en que no hay integración real con un PSP si se pregunta |
 | **SUP-15** | El sistema es fuente de verdad de la venta, no de la operación; recibe eventos de un sistema de operaciones externo | ⚠️ Vigente en el modelo, **sin endpoint de ingesta** | `flight_instance.status`/`aircraft_id` están preparados para recibir eventos (RF-28), pero no existe la API de ingesta (A6) — marcado `○` |
-| **SUP-16 / PE-0** | Restricción confidencial de la sección 3 | 🔴 **No resuelto** | Ver §4 de esta guía |
+| **SUP-16 / PE-0** | Restricción confidencial de la sección 3 | ✅ **No aplica** | Al equipo no se le asignó ninguna. El punto de extensión se conserva con cuatro restricciones hipotéticas analizadas — ver §4 |
 
 ---
 
-## 4. Verificación de la restricción específica del equipo (sección 3 del enunciado)
+## 4. La restricción específica del equipo (sección 3 del enunciado)
 
-**No se encontró ninguna restricción integrada en `docs/00` a `05` ni en `DOCUMENTO-FINAL.md`.** Los tres documentos de diseño contienen el mismo punto de extensión sin resolver:
+**Al equipo no se le asignó ninguna restricción confidencial.** Quedó confirmado y el texto de los documentos se actualizó en consecuencia: donde antes decía *"a la fecha de redacción el equipo aún no ha recibido la restricción"* —que **suena a pendiente**— ahora dice que no se asignó, que es una afirmación cerrada. Es una diferencia de una frase, pero cambia por completo cómo la lee un evaluador.
 
-> *"PE-0 — A la fecha de redacción de esta parte, el equipo aún no ha recibido la restricción específica de la sección 3."* (`01-contexto-y-requisitos.md`, `DOCUMENTO-FINAL.md` §2.3)
+### Qué responder si el docente pregunta por ella
 
-Y `DOCUMENTO-FINAL.md`, Anexo D, lo lista explícitamente como pendiente:
+> *"No se nos asignó restricción específica. Pero el documento conserva el punto de extensión PE-0 con cuatro restricciones hipotéticas analizadas, porque la pregunta de fondo del ejercicio no es qué restricción nos tocó, sino si el diseño aguanta una que no conocíamos al empezar."*
 
-> `- [ ] Integrar la restricción confidencial de la sección 3 en los tres puntos preparados (PE-0, §2.3).`
+Y a continuación, la tabla que sí está en el documento:
 
-Se confirmó en esta sesión que **no hay ninguna restricción asignada al equipo**. Dado que el enunciado (§3) dice que *"cada equipo recibirá... una restricción adicional"* y la trata como obligatoria para la sustentación (§7: *"todos los integrantes deben poder sustentar... incluida la restricción específica asignada en la sección 3"*), esto deja dos lecturas posibles y **conviene resolver cuál es la correcta antes de entregar, no durante la sustentación**:
+| Restricción hipotética | Dónde impactaría este diseño |
+|---|---|
+| *"Permitir overbooking del 5%"* | **Cero cambios estructurales.** `oversell_factor` se modeló como columna, no como constante, justamente para esto: es un `UPDATE` |
+| *"Los datos deben permanecer en territorio nacional"* | Elección de región AWS. **Afecta el costo, no el modelo** |
+| *"Una agencia solo ve un cupo asignado, no la disponibilidad real"* | Nueva entidad `agency_allotment` colgando de `flight_inventory`; el bloqueo pasaría a operar sobre dos filas en la misma transacción. Cambio de alcance moderado, no de mecanismo |
+| *"Debe operar sin conexión en aeropuertos remotos"* | **El caso que el diseño NO absorbe.** Obliga a inventario particionado con reconciliación y **rompe la garantía de serialización**. Está declarado como excepción explícita |
 
-1. **El equipo genuinamente no recibió restricción** (posible: no todos los cursos aplican la sección 3 de la misma forma, o quedó pendiente de asignar). En ese caso, el riesgo no es el contenido — es que el documento **hoy dice "aún no recibida"**, una frase que suena a pendiente, no a "confirmado que no aplica". Si el profesor pregunta por la restricción en la sustentación esperando una respuesta y el equipo dice "no nos llegó", sin poder mostrar que lo confirmó con antelación, la sustentación de esa parte queda mal parada por sorpresa, no por el contenido.
-2. **Hay una restricción que no llegó a este repositorio** (por ejemplo, se comunicó por otro canal — correo, plataforma del curso — y no se trasladó a los documentos).
-
-**Recomendación concreta, antes de la entrega:**
-
-- Confirmar con el docente, por escrito (correo o el canal del curso), si existe o no una restricción asignada al equipo. Guardar esa confirmación.
-- Si la respuesta es "no hay restricción": actualizar `PE-0` en los tres documentos (`01-contexto-y-requisitos.md`, `02-modelo-y-arquitectura.md` si aplica, `DOCUMENTO-FINAL.md`) para que diga explícitamente *"se confirmó con el docente el [fecha] que no se asignó restricción específica al equipo"*, en vez de "aún no recibida". Es una edición de una frase, no un rediseño — el punto de extensión PE-0 ya deja preparados los tres lugares donde entraría (supuestos, requisitos, decisiones) precisamente para este caso.
-- Si aparece una restricción real: los tres documentos ya están estructurados para absorberla sin rediseño (ver la tabla de ejemplos en `PE-0`, que muestra cómo aterrizarían cuatro tipos distintos de restricción). No es trabajo perdido si llega tarde.
-
-Este es el hueco #2 de esta guía. Es barato de cerrar (una confirmación + una frase), pero es el que más directamente amenaza la sustentación oral si se deja sin resolver, porque el enunciado lo trata como eliminatorio.
+> **La cuarta fila es la más valiosa de la tabla**, y conviene señalarla activamente en vez de esperar a que la encuentren: demuestra que el análisis de robustez fue honesto y no un ejercicio de autocomplacencia. **Reconocer el límite de un diseño es más defendible que fingir que todo estaba previsto** — y si el docente plantea esa variación como pregunta sorpresa, la respuesta ya está escrita.
 
 ---
 
@@ -155,7 +151,7 @@ Este es el hueco #2 de esta guía. Es barato de cerrar (una confirmación + una 
 
 | Criterio | Peso | Estado hoy | Nivel actual | Por qué (razón concreta) |
 |---|---|---|---|---|
-| **Requisitos funcionales** | 10% | RF completos, preguntas guía resueltas, supuestos declarados con "qué se rompe si cambia" | **Sobresaliente, con una condición pendiente** | Cumple explícitamente "resuelven las preguntas guía" y "declaran supuestos". Lo único que falta para el texto literal de "Sobresaliente" es *"integran la restricción específica del equipo"* (§4 de esta guía) — hoy ese punto está abierto, no cerrado en falso: el documento admite que no se integró, no lo oculta |
+| **Requisitos funcionales** | 10% | RF completos, preguntas guía resueltas, supuestos declarados con "qué se rompe si cambia" | **Sobresaliente** | Cumple explícitamente "resuelven las preguntas guía" y "declaran supuestos". Sobre la restricción específica: al equipo no se le asignó ninguna, y el documento lo declara de forma cerrada además de conservar el análisis de cuatro restricciones hipotéticas (§4) — incluida una que el diseño no absorbe |
 | **Requisitos no funcionales** | 10% | 19 RNF con métrica, umbral, verificación y riesgo; concurrencia con evidencia real | **Sobresaliente** | La rúbrica pide en particular trazabilidad de la concurrencia a un riesgo de negocio — eso está cubierto de sobra (RNF-C1↔RE-1, con prueba real). El punto débil (RNF-P1-P4 sin prueba de carga ejecutada) no degrada el criterio: la métrica está declarada y es verificable, solo no se ha verificado todavía; eso es exactamente lo que separa "Aceptable" (sin métrica) de "Sobresaliente" (con métrica, aunque la ejecución sea un pendiente) |
 | **Modelo entidad-relación** | 15% | DEC-1/2/3 resuelven escalas, recurrencia y sobreventa explícitamente, con alternativa descartada y justificación en cada una | **Sobresaliente** | Cumple literalmente el criterio de la rúbrica: "resuelve explícitamente escalas, vuelos recurrentes e inventario de sillas, con justificación" |
 | **Arquitectura backend y frontend (diseño)** | 15% | 15 decisiones (DEC-1 a DEC-15), cada una con el RNF/RF que la origina y la alternativa descartada | **Sobresaliente** | El criterio pide conexión explícita a un RNF/RF "especialmente el manejo de concurrencia" — DEC-4 es probablemente la decisión mejor sustentada de todo el documento, con las tres alternativas comparadas contra el escenario real (40 solicitudes/1 silla) |
@@ -163,7 +159,7 @@ Este es el hueco #2 de esta guía. Es barato de cerrar (una confirmación + una 
 | **Implementación ETL, catálogo Glue y costos** | **20%** | **Desplegado y verificado en AWS real.** Dos RDS PostgreSQL 16.15, ambas registradas en el Glue Data Catalog (30 + 13 objetos), job Python Shell `SUCCEEDED` en 112 s, tres hechos poblados (157 / 1.342 / 122 filas), tres vistas de negocio respondiendo. Servicios justificados con RF/RNF y pilares; costos con supuestos declarados y escenario ×10 separado en dos ejes | **Sobresaliente** | Cumple los tres elementos que la rúbrica exige para el nivel alto: implementación funcional, servicios justificados con requisito **y** pilar Well-Architected, y costos con supuestos y crecimiento. Además, las seis desviaciones de entorno (A-1 a A-6) están declaradas en vez de omitidas, que es lo que el enunciado pide explícitamente |
 | **Claridad y trazabilidad del documento** | 10% | Matriz de trazabilidad completa en ambos sentidos (riesgo→requisito→decisión→código→prueba, y decisión→requisito que la origina), referencias cruzadas en cada sección | **Sobresaliente** | Cumple literalmente: "una decisión de arquitectura puede rastrearse hasta el requisito específico que la origina" — es, de hecho, el eje organizador de todo el documento |
 
-**Lectura agregada:** con el despliegue de AWS ya ejecutado, **los siete criterios están en condición de "Sobresaliente"**, con una sola condición abierta: la restricción de la sección 3 (§4 de esta guía), que afecta al criterio de requisitos funcionales (10%) y se cierra con una confirmación por escrito del docente más una frase en el documento. Todo lo demás es sustentable tal como está.
+**Lectura agregada:** con el despliegue de AWS ejecutado y la restricción de la sección 3 resuelta, **los siete criterios están en condición de "Sobresaliente"**. No queda ningún hueco de contenido: lo pendiente es administrativo (fecha de entrega en la portada) y de consolidación con el resto del equipo.
 
 ---
 
@@ -172,7 +168,7 @@ Este es el hueco #2 de esta guía. Es barato de cerrar (una confirmación + una 
 | # | Acción | Esfuerzo | Bloquea |
 |---|---|---|---|
 | ~~1~~ | ~~Desplegar 5.7 en AWS y capturar la evidencia~~ ✅ **Hecho.** Evidencia en [`evidencia/aws-despliegue.md`](evidencia/aws-despliegue.md) | — | — |
-| 1 | **Confirmar con el docente si existe restricción de sección 3** y actualizar `PE-0` con el resultado. **Ahora es el único hueco abierto** | Bajo (un correo + una edición de texto) | 10% de la rúbrica, condición de la sustentación oral (§7 del enunciado) |
+| ~~1~~ | ~~Confirmar la restricción de la sección 3~~ ✅ **Cerrado.** No se asignó ninguna; `PE-0` actualizado | — | — |
 | 2 | Tomar las **capturas de la consola de Glue** mostrando ambas bases del catálogo (punto 8 de la lista de §13.7, que pide captura además de los comandos) | Trivial | Evidencia visual del entregable |
 | 3 | Completar portada de `DOCUMENTO-FINAL.md` (equipo, integrantes, fecha, enlace de repo) | Trivial | Entregable formal |
 | 4 | Ampliar la bitácora de prompts (Anexo A) con los prompts propios de cada integrante, no solo los de esta sesión | Bajo | Requisito explícito de la sección 4 del enunciado |

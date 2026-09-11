@@ -2,7 +2,7 @@
 ## Parte I — Contexto, supuestos y requisitos (secciones 5.1 y 5.2)
 
 **Curso:** Big Data e Ingeniería de Datos · **Entrega:** Parcial 1, 2026-2
-**Equipo:** _(completar)_ · **Fecha:** _(completar)_
+**Integrantes:** José Santiago González · Luis Díaz
 
 ---
 
@@ -53,8 +53,8 @@ El enunciado es deliberadamente incompleto. Un supuesto no declarado es una deci
 
 ### 1.3 Punto de extensión para la restricción del equipo (sección 3)
 
-> **PE-0 — Restricción confidencial asignada al equipo.**
-> A la fecha de redacción de esta parte, el equipo aún no ha recibido la restricción específica de la sección 3. El documento está construido para absorberla en tres puntos concretos, sin rediseño:
+> **PE-0 — Restricción confidencial de la sección 3.**
+> **Al equipo no se le asignó restricción específica.** El documento se construyó de todos modos con el lugar preparado para absorber una en tres puntos concretos, sin rediseño, porque la pregunta de fondo del ejercicio no es *"¿qué restricción te tocó?"* sino *"¿tu diseño aguanta una que no conocías al empezar?"*:
 >
 > 1. **Reglas de negocio** → se agrega como supuesto `SUP-16` en esta misma tabla, con su columna de impacto.
 > 2. **Requisitos** → se agrega como `RF-xx` y/o `RNF-Xn` en las tablas de 5.1/5.2, y se referencia desde la matriz de trazabilidad (Anexo B).

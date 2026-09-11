@@ -6,8 +6,7 @@ lang: es
 
 **Big Data e Ingeniería de Datos · Parcial 1 · 2026-2**
 
-**Equipo:** _(completar)_
-**Integrantes:** _(completar)_
+**Integrantes:** José Santiago González · Luis Díaz
 **Fecha de entrega:** _(completar)_
 **Repositorio:** <https://github.com/JoSker51/parcial-aerolinea>
 
@@ -100,13 +99,13 @@ La columna **"Qué se rompe si cambia"** es tan importante como el supuesto mism
 
 ### 2.3 Punto de extensión para la restricción del equipo (sección 3 del enunciado)
 
-> **PE-0.** A la fecha de redacción el equipo aún no había recibido la restricción confidencial. El documento está construido para absorberla en **tres puntos concretos, sin rediseño**:
+> **PE-0.** **Al equipo no se le asignó restricción específica de la sección 3.** El documento se construyó de todos modos con el lugar preparado para absorber una, en **tres puntos concretos y sin rediseño**:
 >
-> 1. **Supuestos** → se agrega como `SUP-16` en §2, con su columna de impacto.
-> 2. **Requisitos** → se agrega como `RF-xx` y/o `RNF-Xn` en §6/§7 y se referencia desde la matriz de §14.
-> 3. **Decisiones** → se documenta como `DEC-n` con su alternativa descartada.
+> 1. **Supuestos** → se agregaría como `SUP-16` en §2, con su columna de impacto.
+> 2. **Requisitos** → se agregaría como `RF-xx` y/o `RNF-Xn` en §6/§7, referenciado desde la matriz de §14.
+> 3. **Decisiones** → se documentaría como `DEC-n` con su alternativa descartada.
 >
-> Ejemplos de cómo aterrizaría, para demostrar que el diseño es robusto a ella:
+> **Por qué se conserva este punto de extensión aunque no haya restricción que integrar:** porque la pregunta que el ejercicio plantea de verdad no es *"¿qué restricción te tocó?"* sino *"¿tu diseño aguanta una restricción que no conocías al empezar?"*. La tabla siguiente responde a eso: cuatro restricciones hipotéticas de distinto tipo, y dónde impactaría cada una. **Incluida una que el diseño no absorbe** — declararlo es más defendible que fingir que todo estaba previsto.
 >
 > | Restricción hipotética | Dónde impacta |
 > |---|---|
@@ -825,38 +824,9 @@ El bloqueo serializa las solicitudes sobre una sola fila, así que la última en
 
 ### 13.1 Arquitectura implementada
 
-```
-        +------------------- VPC ---------------------------------------+
-        |                                                               |
-        |  +-------------------+         +-------------------+          |
-  API   |  |  RDS PostgreSQL   |         |  RDS PostgreSQL   |          |
- (5.6)--+->|  airline-oltp     |         |  airline-olap     |<-- BI    |
-        |  |  db.t3.small      |         |  db.t3.micro      |   (A7)   |
-        |  |  esquema 3FN      |         |  esquema estrella |          |
-        |  +---------+---------+         +---------^---------+          |
-        |            |                             |                    |
-        |            |   +---------------------+   |                    |
-        |            +-->|  AWS Glue           |---+                    |
-        |   lectura      |  Python Shell job   |   escritura            |
-        |   incremental  |  0.0625 DPU         |   idempotente          |
-        |   (watermark)  |  diario 03:00 COT   |                        |
-        |                +---------------------+                        |
-        |                                                               |
-        |  +---------------+            +---------------+               |
-        |  | oltp-crawler  |            | olap-crawler  |               |
-        |  +-------+-------+            +-------+-------+               |
-        |          |        conexiones JDBC     |                       |
-        |          v                            v                       |
-        |      +----------------------------------------+               |
-        |      |       AWS Glue Data Catalog            |               |
-        |      |  airline_oltp_catalog (30 objetos)     |               |
-        |      |  airline_olap_catalog (13 tablas)      |               |
-        |      +----------------------------------------+               |
-        |                                                               |
-        |  Security Group airline-db-sg (auto-ref., todos los puertos)   |
-        +---------------------------------------------------------------+
-                              Rol IAM: LabRole
-```
+![Arquitectura implementada en AWS](diagramas/arquitectura-aws.png)
+
+*Figura 3 — Arquitectura desplegada en AWS Academy Learner Lab. Muestra las dos bases PostgreSQL, el proceso ETL y su relación con el Glue Data Catalog. **Los dos circuitos son independientes**: el job mueve datos (OLTP → OLAP) y los crawlers mueven metadatos (→ Data Catalog); el ETL no lee del catálogo.*
 
 Provisión reproducible en `etl/infra/setup_aws.sh`; código del ETL en `etl/glue_job_oltp_to_olap.py`.
 
@@ -1060,7 +1030,7 @@ Las tres vistas de negocio responden con datos reales. **Un resultado que valida
 
 ![Modelo estrella de la base analítica](diagramas/estrella-olap.png)
 
-*Figura 3 — Esquema en estrella: 5 dimensiones y 3 hechos, uno por cada pregunta de negocio del enunciado.*
+*Figura 4 — Esquema en estrella: 5 dimensiones y 3 hechos, uno por cada pregunta de negocio del enunciado.*
 
 ### 13.7 Lista de verificación del requisito
 
@@ -1076,6 +1046,51 @@ El enunciado exige que **ambas bases queden registradas en el Glue Data Catalog*
 | 6 | Corrida exitosa del ETL | `aws glue get-job-runs --job-name airline-etl-oltp-to-olap --query 'JobRuns[0].[JobRunState,ExecutionTime]'` |
 | 7 | Datos en la analítica | `SELECT * FROM analytics.v_occupancy_by_route LIMIT 20;` |
 | 8 | Captura de la consola de Glue con ambas bases | — |
+
+**Resultado real de la verificación:**
+
+| Verificación | Resultado |
+|---|---|
+| Instancias RDS | `airline-oltp` (db.t3.small) y `airline-olap` (db.t3.micro), PostgreSQL 16.15 |
+| **Tablas del OLTP en el catálogo** | **30 objetos** (26 tablas + 4 vistas) |
+| **Tablas del OLAP en el catálogo** | **13 objetos** (10 tablas + 3 vistas) |
+| Corrida del ETL | **`SUCCEEDED`**, 112 segundos |
+| Datos en la analítica | 157 tiquetes, 1.342 filas de ocupación, 122 de ciclo de vida |
+
+### Evidencia en la consola de AWS
+
+![Ambas bases registradas en el Glue Data Catalog](evidencia/capturas/01-glue-databases.png)
+
+*Figura 5 — **El requisito explícito del enunciado, cumplido.** Las dos bases aparecen registradas en el Glue Data Catalog de la cuenta: `airline_oltp_catalog` y `airline_olap_catalog`.*
+
+![Tablas del catálogo analítico](evidencia/capturas/02-glue-tablas-olap.png)
+
+*Figura 6 — `airline_olap_catalog` con sus **13 tablas** descubiertas por el crawler, clasificadas como `postgresql`. Se reconocen las cinco dimensiones, los tres hechos y las tablas de control del ETL.*
+
+![Corrida del job de ETL](evidencia/capturas/03-glue-job-run.png)
+
+*Figura 7 — Corrida del job `airline-etl-oltp-to-olap`: **`Succeeded` en 1 m 52 s con 0.0625 DPUs**, el mínimo facturable de AWS. Las tres corridas en `Stopped` que la preceden son los intentos fallidos documentados en §13.8 — se conservan deliberadamente porque **son la evidencia de que los seis obstáculos ocurrieron de verdad**.*
+
+![Instancias RDS](evidencia/capturas/04-rds-instancias.png)
+
+*Figura 8 — Las dos instancias: `airline-oltp` (`db.t3.small`, us-east-1a) y `airline-olap` (`db.t3.micro`, us-east-1d), con las clases exactas de la proyección de costos de §13.4. Aparecen **detenidas** por la decisión de control de presupuesto documentada en P-13: el catálogo sigue respondiendo porque son metadatos, no datos.*
+
+---
+
+### 13.8 Lo que solo apareció al desplegar de verdad
+
+> El enunciado pide declarar los ajustes en vez de omitirlos. Estos seis **no son visibles leyendo el diseño**: solo aparecen ejecutando contra AWS real, y por eso mismo son la evidencia de que el despliegue ocurrió.
+
+| # | Síntoma | Causa raíz | Corrección |
+|---|---|---|---|
+| **1** | La creación de la instancia falla | **PostgreSQL 16.3 quedó deprecada** en RDS. Fijar una versión exacta en un guion de infraestructura tiene fecha de caducidad | Se fijó `16.15`. Se conservan las clases `db.t3.small` / `db.t3.micro` porque siguen disponibles y son las de la proyección de costos |
+| **2** | La conexión de Glue queda inconsistente | El guion fijaba la zona de disponibilidad como `us-east-1a` pero tomaba la primera subred que devolviera la API, **y ese orden no está garantizado**: resultó estar en `us-east-1d` | La zona se **deriva** de la subred elegida, en vez de asumirse |
+| **3** | *"El archivo no existe"* aunque el archivo existe | El `aws` de Windows es un binario nativo y **no entiende rutas de estilo Unix** | La ruta se traduce antes de pasarla |
+| **4** | Crawler `FAILED`: *"At least one security group must open all ingress ports"* | **Este documento estaba equivocado.** La auto-referencia del security group limitada al 5432 **no le basta a Glue**: sus tarjetas de red se comunican entre sí por puertos efímeros | Regla auto-referenciada en **todos** los puertos. Sigue cerrada al exterior: el origen es el propio grupo, no un rango de direcciones |
+| **5** | Crawlers `SUCCEEDED` pero **catálogo con 0 tablas** | El guion lanzaba los crawlers **inmediatamente después de crear las bases**, cuando aún estaban vacías. Un crawler sobre una base sin tablas termina bien y no registra nada | El orden correcto es: crear las bases → **cargar los esquemas** → ejecutar los crawlers |
+| **6** | El job se cuelga ~10 min y falla con *"Connection to pypi.org timed out"* | El job corre **dentro de la VPC** (por llevar conexiones JDBC adjuntas) y, sin pasarela de salida —decisión C-10 de no pagar NAT Gateway—, **no tiene ruta a internet** para descargar el driver | El driver se **precarga en S3** (que sí es alcanzable) y se entrega al job desde ahí. Queda como desviación **A-6** |
+
+> **La moraleja de método, que es la más valiosa de toda la sección:** el hallazgo número 5 demuestra que **un proceso en estado `SUCCEEDED` no prueba que el requisito se cumplió**. El requisito del enunciado es que las tablas *aparezcan en el catálogo*, y eso solo lo demuestra consultar el catálogo y obtener un conteo mayor que cero. **Verificar el estado del proceso en vez de su efecto es exactamente el tipo de falso positivo que este ejercicio enseña a detectar** — el mismo error, en otra escala, que una prueba de concurrencia que mira códigos HTTP en vez del estado de la base.
 
 ---
 
@@ -1133,23 +1148,44 @@ Toda arquitectura es un conjunto de renuncias. Estas son las del equipo, declara
 
 ## Anexo A — Bitácora de prompts
 
-> Requisito de la sección 4 del enunciado.
+> **Requisito de la sección 4 del enunciado:** *"el documento final debe incluir, como anexo, una bitácora breve de los principales prompts usados durante el ejercicio y de cómo fueron refinados o corregidos por el equipo."*
 
-**Asistente:** Claude (Opus 5), vía Claude Code.
-**Alcance:** redacción del documento, diseño del modelo de datos, implementación del backend y del ETL, guiones de infraestructura.
+**Asistente:** Claude (Opus 5), vía Claude Code. **Alcance:** redacción del documento, diseño del modelo de datos, implementación del backend y del ETL, guiones de infraestructura, diagramas y despliegue en AWS.
 
-> ⚠️ **Para el equipo:** complete esta bitácora con los prompts propios de cada integrante y, sobre todo, con la columna **"corrección del equipo"** — que es la que demuestra criterio y la que el docente puede contrastar en la sustentación. Un prompt sin corrección registrada sugiere que la salida se aceptó sin revisar.
+El trabajo ocurrió en **dos sesiones con integrantes distintos**: la primera de **diseño**, la segunda de **auditoría, despliegue real y documentación**. La versión extendida de esta bitácora, con el prompt inicial y el refinado de cada entrada, está en `docs/05-anexo-bitacora-prompts.md`.
+
+**La columna que importa es la última.** Un prompt sin corrección registrada sugiere que la salida se aceptó sin revisar; las decisiones sustentables de este trabajo son las que **sobrevivieron a una corrección**.
+
+### Primera sesión — diseño
 
 | # | Intención del prompt | Corrección que hubo que hacer |
 |---|---|---|
-| **P-01** | Encuadre inicial: *"Ayúdame con este parcial"* | El asistente preguntó el alcance y **si ya se tenía la restricción confidencial de la sección 3**. La segunda pregunta era la importante: sin ella habría escrito un documento que después habría que rehacer. Llevó al punto de extensión **PE-0** |
-| **P-02** | Traducir el enunciado al español | Tener la rúbrica en español permitió estructurar el documento **contra la rúbrica**, no contra el orden de lectura del enunciado |
-| **P-03** | Requisitos que resuelvan las preguntas guía | Los primeros RNF decían *"búsqueda rápida"* sin número → se exigió **métrica + umbral + verificación + riesgo**. Los supuestos eran una lista plana → se agregó **"qué se rompe si cambia"**. Se propuso 99,99% de disponibilidad → se corrigió a **99,9%** con el argumento del conflicto con RNF-C1 |
-| **P-04** | Modelo E-R que resuelva las cinco preguntas de 5.3 | Primera propuesta con una sola entidad `flight` → se partió en dos (**DEC-1**). Relación `N—N` directa → se introdujo `itinerary` (**DEC-2**). **Inventario por silla individual → se cambió a conteo por cabina (DEC-3): la corrección de mayor impacto de todo el ejercicio.** `v_inventory_reconciliation` contaba tramos en vez de sillas |
-| **P-05** | Arquitectura conectada a los RNF | Propuso bloqueo **optimista** por ser el patrón más habitual → se corrigió tras analizar que con 40 solicitudes por 1 silla produce una tormenta de reintentos. Faltaba el **orden canónico de bloqueo**: se añadió al notar el riesgo de abrazo mortal |
-| **P-06** | Implementación con prueba de concurrencia real | La primera prueba usaba `asyncio.gather` (**habría pasado sin ningún bloqueo**), lanzaba en bucle (sin contención), un solo worker y solo verificaba códigos HTTP. Se corrigieron las cuatro cosas |
-| **P-07** | AWS con pilares y costos | Propuso Glue **Spark** por defecto → se cambió a Python Shell. Los pilares se citaban de forma decorativa → se exigió nombrar un RF/RNF concreto. Faltaban las desviaciones del Learner Lab → se agregaron como **A-1 a A-4** |
-| **P-08** | Ejecutar de verdad lo construido | Aparecieron **tres bugs de tipado de parámetros** invisibles en revisión de código (D-6) y un problema de aislamiento de pruebas (D-7) |
+| **P-01** | Encuadre: *"Ayúdame con este parcial"* | El asistente preguntó el alcance y **si ya se tenía la restricción confidencial de la sección 3**. La segunda pregunta no estaba prevista y llevó al punto de extensión **PE-0** |
+| **P-02** | Traducir el enunciado conservando numeración y rúbrica literal | Efecto metodológico: con la rúbrica a la vista, **el documento se estructuró contra la rúbrica**, no contra el orden de lectura del enunciado |
+| **P-03** | Requisitos que resuelvan las preguntas guía, con métrica y umbral | Los RNF decían *"debe ser rápida"* sin número → se exigió **métrica + umbral + verificación + riesgo**. Los supuestos eran lista plana → se añadió *"qué se rompe si cambia"*. Propuso **99,99%** de disponibilidad → se corrigió a **99,9%** por su conflicto con la no-sobreventa |
+| **P-04** | Modelo E-R sin asumir que la lista del enunciado fuera correcta | Una sola entidad `flight` → se partió en dos (**DEC-1**). Relación `N—N` directa → se introdujo `itinerary` (**DEC-2**). **Inventario por sillas individuales → conteo por cabina (DEC-3): la corrección de mayor impacto del ejercicio** |
+| **P-05** | Cada decisión conectada a un RNF, evaluando las tres opciones de concurrencia contra el escenario real | Propuso **bloqueo optimista** "porque es lo habitual" → se rechazó: con 40 solicitudes por 1 silla, 39 reintentan y vuelven a chocar. Faltaba el **orden canónico** de bloqueo → se añadió. La regla vivía solo en el código → se exigió una `CHECK` **en la base** |
+| **P-06** | Implementación fiel al diseño, con una prueba que **no pueda dar falso positivo** | Usaba `asyncio.gather` (**habría pasado sin ningún bloqueo**) → hilos reales. Lanzaba en bucle → barrera de sincronización. Un solo proceso → cuatro. Solo miraba códigos HTTP → **aserción contra la base** |
+| **P-07** | AWS justificando servicios por pilar y con costos | Propuso **Glue Spark** → se cambió a Python Shell (~16× más barato). Los pilares se citaban de forma decorativa → se exigió nombrar el RF/RNF. Faltaban las desviaciones del Learner Lab → **A-1 a A-4** |
+| **P-08** | *"No me digas que funciona: muéstrame la salida"* | Tres bugs de tipado **invisibles en revisión de código** y un problema de aislamiento entre pruebas (**D-6**, **D-7**) |
+| **P-09** | Consolidar todo en un documento con índice y diagramas | Numeración duplicada y título repetido en la primera conversión; más tarde, tablas que se perdían por los saltos de línea de Windows. Se detectó porque **se verifica la estructura del `.docx` después de generarlo** |
+| **P-10** | Diagramas de nivel superior de las bases de datos | El primer mapa dibujaba **todas** las claves foráneas: ilegible → se redujo a dependencias entre bloques. Acentos corruptos por falta de UTF-8; recuadros solapados por títulos más anchos que su contenido |
+| **P-11** | Guía interna de sustentación por sección | Se exigió que **no fingiera que todo estaba previsto**: la variación "operar sin conexión" rompe la garantía de serialización, y la respuesta honesta es decirlo |
+
+### Segunda sesión — auditoría, despliegue real y documentación
+
+> En esta sesión los prompts llegaron **ya refinados desde el primer intento**, con restricciones y criterio de aceptación incluidos. Es el aprendizaje de la primera sesión aplicado.
+
+| # | Intención del prompt | Qué produjo, y quién decidió |
+|---|---|---|
+| **P-12** | *"Léelo todo primero… **no asumas nada a partir de nombres de archivo**"* | Instrucción de **método**, del equipo. Sin ella el asistente habría inferido por los nombres que 5.7 estaba terminada. **La auditoría demostró lo contrario** y eso redefinió el trabajo |
+| **P-13** | Guía de defensa con **estructura impuesta por el equipo**, y la restricción *"no inventes decisiones nuevas"* | Esa restricción impidió que la auditoría se volviera un rediseño encubierto. **Hallazgo: el criterio del 20% calificaba como Insuficiente**, porque el código de AWS nunca se había ejecutado |
+| **P-14** | La restricción de la sección 3 | **Aporte del equipo:** no se asignó ninguna. Recomendación: confirmarlo por escrito y cambiar *"aún no recibida"* por *"se confirmó que no aplica"*, porque lo primero suena a pendiente |
+| **P-15** | *"Guíame paso a paso… y **depura en vivo** lo que aparezca"* | Se desplegó de verdad. **Seis fallos que ningún diseño en papel anticipa** (§13.8), incluida una **corrección a este documento**: la auto-referencia del security group limitada al 5432 **no le basta a Glue** |
+| **P-16** | *"Tengo 50 dólares… haz que me cueste lo menos posible"* | Costo como restricción activa. Tres instancias de ejercicios previos habían consumido ~la mitad del presupuesto. **Decisión del equipo:** apagarlas, no borrarlas. Gasto diario: de ~2,83 a ~0,38 USD |
+| **P-17** | Profundización sobre decisiones, clases tarifarias y tablas; y qué se entrega | Sacó a la luz tres cosas **que ningún documento explicaba**: la columna `rank` de `fare_class`, la **clave foránea compuesta** hacia `flight_inventory`, y el criterio de borrado en cascada |
+
+> **Criterio de esta bitácora:** registra únicamente lo ocurrido, distinguiendo lo que propuso el asistente de lo que decidió el equipo. La razón es práctica antes que ética: **una bitácora inflada sube la vara que después hay que saltar en la sustentación**, que es eliminatoria. Las decisiones atribuidas al equipo son las que el equipo puede defender; las atribuidas al asistente están documentadas con su alternativa descartada, que es lo que permite sustentarlas aunque no se hayan originado en el equipo.
 
 ### Balance del uso de IA
 
@@ -1274,12 +1310,13 @@ Vale la pena decirlo porque es la validación real del diseño: **el mecanismo d
 
 ---
 
-## Anexo D — Pendientes para el equipo
+## Anexo D — Estado de los pendientes
 
-- [ ] Integrar la **restricción confidencial de la sección 3** en los tres puntos preparados (PE-0, §2.3).
-- [ ] Completar los datos del equipo en la portada.
-- [ ] Ampliar la bitácora de prompts (Anexo A) con los propios de cada integrante.
-- [ ] Publicar el código en GitHub y añadir el enlace (entregable de 5.6).
-- [ ] **Verificar los precios de AWS en la calculadora** antes de entregar: las cifras de §13.4 deben confirmarse contra los precios vigentes.
-- [x] ~~Ejecutar `etl/infra/setup_aws.sh` en el Learner Lab~~ **Hecho.** Ambas bases quedaron registradas en el Glue Data Catalog y el ETL corrió con éxito. Salidas reales en [`evidencia/aws-despliegue.md`](evidencia/aws-despliegue.md); los seis obstáculos del despliegue, en §5.7.7 de [`03-aws-etl-catalogo-costos.md`](03-aws-etl-catalogo-costos.md).
-- [ ] Adjuntar la **captura de la consola de Glue** mostrando ambas bases del catálogo (punto 8 de la lista de §13.7: es lo único de esa lista que no se puede generar por CLI).
+- [x] ~~Integrar la **restricción confidencial de la sección 3**~~ — **No aplica:** al equipo no se le asignó ninguna. El punto de extensión `PE-0` (§2.3) se conserva con cuatro restricciones hipotéticas analizadas, incluida una que el diseño no absorbe.
+- [x] ~~Completar los integrantes en la portada~~ — José Santiago González y Luis Díaz.
+- [x] ~~Ampliar la bitácora de prompts~~ — **17 entradas de dos sesiones** con dos integrantes (Anexo A).
+- [x] ~~Publicar el código en GitHub~~ — <https://github.com/JoSker51/parcial-aerolinea> (público).
+- [x] ~~Ejecutar `etl/infra/setup_aws.sh` en el Learner Lab~~ — Ambas bases registradas en el Glue Data Catalog y ETL en `SUCCEEDED`. Evidencia en §13.7 y `docs/evidencia/`.
+- [x] ~~Adjuntar la captura de la consola de Glue~~ — Figuras 5 a 8.
+- [ ] **Fecha de entrega** en la portada.
+- [ ] **Verificar los precios de AWS** en la calculadora antes de presentar: las cifras de §13.4 se consultaron el 2026-09-02 y los precios cambian.
