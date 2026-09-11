@@ -20,3 +20,7 @@ Thumbs.db
 # Temporales de conversión de documentos
 ~$*.docx
 *.bak
+
+# Material interno de preparación de la sustentación: no forma parte de la entrega
+docs/06-guia-defensa.*
+docs/09-guia-rapida-sustentacion.*
