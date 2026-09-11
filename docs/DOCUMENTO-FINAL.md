@@ -9,7 +9,7 @@ lang: es
 **Equipo:** _(completar)_
 **Integrantes:** _(completar)_
 **Fecha de entrega:** _(completar)_
-**Repositorio:** _(completar enlace de GitHub)_
+**Repositorio:** <https://github.com/JoSker51/parcial-aerolinea>
 
 ---
 
@@ -121,7 +121,7 @@ La columna **"Qué se rompe si cambia"** es tan importante como el supuesto mism
 
 > **Responde a:** *¿cómo resolviste las preguntas guía?*
 >
-> El enunciado plantea 22 preguntas guía repartidas entre 5.1 y 5.7. Aquí están **todas**, respondidas de forma directa, con el enlace a la sección donde se desarrolla el argumento. Esta sección existe para que el lector pueda verificar de un vistazo que ninguna quedó sin resolver.
+> El enunciado plantea **30 preguntas guía** repartidas entre 5.1 y 5.7 (5 en 5.1, 6 en 5.2, 5 en 5.3, 5 en 5.4, 4 en 5.5 y 5 en 5.7). Aquí están **todas**, respondidas de forma directa, con el enlace a la sección donde se desarrolla el argumento. Esta sección existe para que el lector pueda verificar de un vistazo que ninguna quedó sin resolver.
 
 ### 3.1 Sobre requisitos funcionales (5.1)
 
